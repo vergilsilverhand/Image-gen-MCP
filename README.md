@@ -53,7 +53,7 @@ This method runs the server directly from npm without needing local files:
       "args": ["@gongrzhe/image-gen-server"],
       "env": {
         "REPLICATE_API_TOKEN": "your-replicate-api-token",
-        "MODEL": "aisha-ai-official/illust3relustion:7ff25c52350d3ef76aba554a6ae0b327331411572aeb758670a1034da3f1fec8"
+        "MODEL": "aisha-ai-official/illust3relustion"
       },
       "disabled": false,
       "autoApprove": []
@@ -73,7 +73,7 @@ If you installed the package locally:
       "args": ["/path/to/image-gen-server/build/index.js"],
       "env": {
         "REPLICATE_API_TOKEN": "your-replicate-api-token",
-        "MODEL": "aisha-ai-official/illust3relustion:7ff25c52350d3ef76aba554a6ae0b327331411572aeb758670a1034da3f1fec8"
+        "MODEL": "aisha-ai-official/illust3relustion"
       },
       "disabled": false,
       "autoApprove": []
@@ -94,7 +94,7 @@ If you installed the package locally:
 ### Environment Variables
 
 - `REPLICATE_API_TOKEN` (required): Your Replicate API token for authentication
-- `MODEL` (optional): The Replicate model to use for image generation. Defaults to "aisha-ai-official/illust3relustion:7ff25c52350d3ef76aba554a6ae0b327331411572aeb758670a1034da3f1fec8"
+- `MODEL` (optional): The Replicate model to use for image generation. Defaults to "aisha-ai-official/illust3relustion"
 
 ### Configuration Parameters
 

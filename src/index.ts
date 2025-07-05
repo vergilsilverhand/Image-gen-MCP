@@ -30,7 +30,7 @@ interface IllustriousInput {
 class ImageGenerationServer {
   private server: Server;
   private axiosInstance;
-  private readonly MODEL = process.env.MODEL || 'aisha-ai-official/illust3relustion:7ff25c52350d3ef76aba554a6ae0b327331411572aeb758670a1034da3f1fec8';
+  private readonly MODEL = process.env.MODEL || 'aisha-ai-official/illust3relustion';
 
   constructor() {
     this.server = new Server(

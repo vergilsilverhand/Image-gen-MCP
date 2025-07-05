@@ -11,7 +11,7 @@
   "keywords": [],
   "author": "GongRzhe",
   "license": "MIT",
-  "description": "An MCP server for image generation using the Replicate Flux model",
+  "description": "An MCP server for image generation using the Replicate Illustrious model",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.5.0",
     "@types/node": "^22.13.5",
