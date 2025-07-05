@@ -1,35 +1,45 @@
 {
-  "name": "@gongrzhe/image-gen-server",
-  "version": "1.0.1",
+  "name": "@gongrzhe/replicate-mcp-server",
+  "version": "0.9.0",
   "type": "module",
   "main": "build/index.js",
   "scripts": {
     "build": "tsc",
     "start": "node build/index.js",
-    "prepublishOnly": "npm run build"
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["mcp", "replicate", "ai", "image-generation", "model-context-protocol"],
   "author": "GongRzhe",
-  "license": "MIT",
-  "description": "An MCP server for image generation using the Replicate Illustrious model",
+  "license": "Apache-2.0",
+  "description": "A Model Context Protocol server for Replicate API with full feature support",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.5.0",
     "@types/node": "^22.13.5",
     "axios": "^1.7.9",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "zod": "^3.22.4",
+    "zod-to-json-schema": "^3.22.4",
+    "commander": "^11.1.0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GongRzhe/image-gen-server.git"
+    "url": "git+https://github.com/GongRzhe/replicate-mcp-server.git"
   },
   "bugs": {
-    "url": "https://github.com/GongRzhe/image-gen-server/issues"
+    "url": "https://github.com/GongRzhe/replicate-mcp-server/issues"
   },
-  "homepage": "https://github.com/GongRzhe/image-gen-server#readme",
+  "homepage": "https://github.com/GongRzhe/replicate-mcp-server#readme",
   "bin": {
-    "image-gen-server": "build/index.js"
+    "replicate-mcp-server": "build/index.js"
   },
   "files": [
-    "build/**/*"
-  ]
+    "build/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
 }
