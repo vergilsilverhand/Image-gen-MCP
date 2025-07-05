@@ -14,23 +14,23 @@ if (!REPLICATE_API_TOKEN) {
   throw new Error('REPLICATE_API_TOKEN environment variable is required');
 }
 
-interface FluxInput {
+interface IllustriousInput {
   prompt: string;
-  seed?: number;
-  go_fast?: boolean;
-  megapixels?: '1' | '0.25';
+  negative_prompt?: string;
+  width?: number;
+  height?: number;
   num_outputs?: number;
-  aspect_ratio?: '1:1' | '16:9' | '21:9' | '3:2' | '2:3' | '4:5' | '5:4' | '3:4' | '4:3' | '9:16' | '9:21';
-  output_format?: 'webp' | 'jpg' | 'png';
-  output_quality?: number;
+  seed?: number;
+  guidance_scale?: number;
   num_inference_steps?: number;
-  disable_safety_checker?: boolean;
+  scheduler?: string;
+  clip_skip?: number;
 }
 
 class ImageGenerationServer {
   private server: Server;
   private axiosInstance;
-  private readonly MODEL = process.env.MODEL || 'black-forest-labs/flux-schnell';
+  private readonly MODEL = process.env.MODEL || 'aisha-ai-official/illust3relustion:7ff25c52350d3ef76aba554a6ae0b327331411572aeb758670a1034da3f1fec8';
 
   constructor() {
     this.server = new Server(
@@ -56,7 +56,7 @@ class ImageGenerationServer {
     this.setupToolHandlers();
     
     // Error handling
-    this.server.onerror = (error) => console.error('[MCP Error]', error);
+    this.server.onerror = (error: Error) => console.error('[MCP Error]', error);
     process.on('SIGINT', async () => {
       await this.server.close();
       process.exit(0);
@@ -68,7 +68,7 @@ class ImageGenerationServer {
       tools: [
         {
           name: 'generate_image',
-          description: 'Generate an image using the Flux model',
+          description: 'Generate an image using the Illustrious model',
           inputSchema: {
             type: 'object',
             properties: {
@@ -76,21 +76,23 @@ class ImageGenerationServer {
                 type: 'string',
                 description: 'Prompt for generated image',
               },
-              seed: {
+              negative_prompt: {
+                type: 'string',
+                description: 'Negative prompt to exclude unwanted elements',
+              },
+              width: {
                 type: 'integer',
-                description: 'Random seed for reproducible generation',
+                description: 'Width of the generated image',
+                default: 1024,
+                minimum: 256,
+                maximum: 4096,
               },
-              aspect_ratio: {
-                type: 'string',
-                enum: ['1:1', '16:9', '21:9', '3:2', '2:3', '4:5', '5:4', '3:4', '4:3', '9:16', '9:21'],
-                description: 'Aspect ratio for the generated image',
-                default: '1:1',
-              },
-              output_format: {
-                type: 'string',
-                enum: ['webp', 'jpg', 'png'],
-                description: 'Format of the output images',
-                default: 'webp',
+              height: {
+                type: 'integer',
+                description: 'Height of the generated image',
+                default: 1024,
+                minimum: 256,
+                maximum: 4096,
               },
               num_outputs: {
                 type: 'integer',
@@ -99,10 +101,36 @@ class ImageGenerationServer {
                 minimum: 1,
                 maximum: 4,
               },
-              disable_safety_checker: {
-                type: 'boolean',
-                description: 'Disable safety checker for the generated images',
-                default: false,
+              seed: {
+                type: 'integer',
+                description: 'Random seed for reproducible generation',
+              },
+              guidance_scale: {
+                type: 'number',
+                description: 'CFG scale for prompt adherence',
+                default: 7.0,
+                minimum: 1.0,
+                maximum: 20.0,
+              },
+              num_inference_steps: {
+                type: 'integer',
+                description: 'Number of inference steps',
+                default: 20,
+                minimum: 1,
+                maximum: 100,
+              },
+              scheduler: {
+                type: 'string',
+                description: 'Scheduler type for generation',
+                enum: ['DPMSolverMultistepScheduler', 'EulerDiscreteScheduler', 'EulerAncestralDiscreteScheduler', 'DDIMScheduler'],
+                default: 'DPMSolverMultistepScheduler',
+              },
+              clip_skip: {
+                type: 'integer',
+                description: 'Number of CLIP layers to skip',
+                default: 1,
+                minimum: 1,
+                maximum: 12,
               },
             },
             required: ['prompt'],
@@ -111,7 +139,7 @@ class ImageGenerationServer {
       ],
     }));
 
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    this.server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
       if (request.params.name !== 'generate_image') {
         throw new McpError(
           ErrorCode.MethodNotFound,
@@ -134,25 +162,37 @@ class ImageGenerationServer {
         );
       }
 
-      const input: FluxInput = {
+      const input: IllustriousInput = {
         prompt: request.params.arguments.prompt,
       };
 
       // Add optional parameters if they exist and are valid
-      if ('seed' in request.params.arguments && typeof request.params.arguments.seed === 'number') {
-        input.seed = request.params.arguments.seed;
+      if ('negative_prompt' in request.params.arguments && typeof request.params.arguments.negative_prompt === 'string') {
+        input.negative_prompt = request.params.arguments.negative_prompt;
       }
-      if ('aspect_ratio' in request.params.arguments && typeof request.params.arguments.aspect_ratio === 'string') {
-        input.aspect_ratio = request.params.arguments.aspect_ratio as FluxInput['aspect_ratio'];
+      if ('width' in request.params.arguments && typeof request.params.arguments.width === 'number') {
+        input.width = Math.max(256, Math.min(4096, request.params.arguments.width));
       }
-      if ('output_format' in request.params.arguments && typeof request.params.arguments.output_format === 'string') {
-        input.output_format = request.params.arguments.output_format as FluxInput['output_format'];
+      if ('height' in request.params.arguments && typeof request.params.arguments.height === 'number') {
+        input.height = Math.max(256, Math.min(4096, request.params.arguments.height));
       }
       if ('num_outputs' in request.params.arguments && typeof request.params.arguments.num_outputs === 'number') {
         input.num_outputs = Math.min(Math.max(1, request.params.arguments.num_outputs), 4);
       }
-      if ('disable_safety_checker' in request.params.arguments && typeof request.params.arguments.disable_safety_checker === 'boolean') {
-        input.disable_safety_checker = request.params.arguments.disable_safety_checker;
+      if ('seed' in request.params.arguments && typeof request.params.arguments.seed === 'number') {
+        input.seed = request.params.arguments.seed;
+      }
+      if ('guidance_scale' in request.params.arguments && typeof request.params.arguments.guidance_scale === 'number') {
+        input.guidance_scale = Math.max(1.0, Math.min(20.0, request.params.arguments.guidance_scale));
+      }
+      if ('num_inference_steps' in request.params.arguments && typeof request.params.arguments.num_inference_steps === 'number') {
+        input.num_inference_steps = Math.max(1, Math.min(100, request.params.arguments.num_inference_steps));
+      }
+      if ('scheduler' in request.params.arguments && typeof request.params.arguments.scheduler === 'string') {
+        input.scheduler = request.params.arguments.scheduler;
+      }
+      if ('clip_skip' in request.params.arguments && typeof request.params.arguments.clip_skip === 'number') {
+        input.clip_skip = Math.max(1, Math.min(12, request.params.arguments.clip_skip));
       }
 
       try {
@@ -188,7 +228,7 @@ class ImageGenerationServer {
           // Wait before polling again
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
-      } catch (error) {
+      } catch (error: any) {
         if (axios.isAxiosError(error)) {
           throw new McpError(
             ErrorCode.InternalError,
